@@ -1,0 +1,25 @@
+{
+  "name": "@app/server",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@app/api": "workspace:*",
+    "@app/auth": "workspace:*",
+    "@app/db": "workspace:*",
+    "@fastify/cors": "^11.0.0",
+    "@fastify/static": "^8.3.0",
+    "@trpc/server": "^11.0.0",
+    "dotenv": "^16.4.0",
+    "fastify": "^5.0.0",
+    "tsx": "^4.19.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.0"
+  }
+}

@@ -1,0 +1,8 @@
+node_modules
+dist
+.output
+.env
+.turbo
+uploads
+*.log
+packages/db/drizzle/meta

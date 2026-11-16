@@ -1,0 +1,19 @@
+{
+  "name": "@app/auth",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./server": "./src/server.ts",
+    "./server-utils": "./src/server-utils.ts",
+    "./client": "./src/client.ts"
+  },
+  "dependencies": {
+    "@app/db": "workspace:*",
+    "better-auth": "^1.6.0"
+  },
+  "devDependencies": {
+    "typescript": "~5.7.0"
+  }
+}

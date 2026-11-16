@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Saigon Corner — Staff</title>
+    <script>
+      try {
+        var stored = window.localStorage.getItem("mantine-color-scheme-value");
+        var scheme =
+          stored === "light" || stored === "dark" || stored === "auto"
+            ? stored
+            : "auto";
+        var computed =
+          scheme !== "auto"
+            ? scheme
+            : window.matchMedia("(prefers-color-scheme: dark)").matches
+              ? "dark"
+              : "light";
+        document.documentElement.setAttribute(
+          "data-mantine-color-scheme",
+          computed,
+        );
+      } catch (e) {}
+    </script>
+    <style>
+      *,
+      *::before,
+      *::after {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        -webkit-font-smoothing: antialiased;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

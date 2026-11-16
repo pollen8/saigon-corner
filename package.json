@@ -1,0 +1,19 @@
+{
+  "name": "saigon-corner-staff",
+  "private": true,
+  "scripts": {
+    "dev": "turbo dev --filter=@app/server --filter=@app/web",
+    "build": "turbo build",
+    "db:generate": "pnpm --filter @app/db generate",
+    "db:migrate": "pnpm --filter @app/db migrate",
+    "db:studio": "pnpm --filter @app/db studio"
+  },
+  "devDependencies": {
+    "turbo": "^2.4.0",
+    "typescript": "~5.7.0"
+  },
+  "packageManager": "pnpm@9.15.0",
+  "engines": {
+    "node": ">=20"
+  }
+}

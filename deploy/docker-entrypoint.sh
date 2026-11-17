@@ -6,6 +6,7 @@ if [ -z "${POSTGRES_PASSWORD:-}" ]; then
   exit 1
 fi
 
+unset DATABASE_URL 2>/dev/null || true
 export DATABASE_URL="$(node -e "
   const user = process.env.POSTGRES_USER || 'postgres';
   const host = process.env.POSTGRES_HOST || 'postgres';
@@ -15,5 +16,5 @@ export DATABASE_URL="$(node -e "
   process.stdout.write(\`postgresql://\${user}:\${enc}@\${host}:5432/\${db}\`);
 ")"
 
-pnpm --filter @app/db exec drizzle-kit migrate
-exec pnpm --filter @app/server exec tsx src/index.ts
+DATABASE_URL="$DATABASE_URL" pnpm --filter @app/db exec drizzle-kit migrate
+exec env DATABASE_URL="$DATABASE_URL" pnpm --filter @app/server exec tsx src/index.ts

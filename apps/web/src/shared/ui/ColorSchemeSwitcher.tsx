@@ -1,4 +1,4 @@
-import { ActionIcon, Menu, useMantineColorScheme } from "@mantine/core";
+import { ActionIcon, Group, Menu, Stack, Text, useMantineColorScheme } from "@mantine/core";
 import {
   IconCheck,
   IconDeviceDesktop,
@@ -18,15 +18,43 @@ const OPTIONS: {
   { value: "auto", label: "System", icon: IconDeviceDesktop },
 ];
 
-export function ColorSchemeSwitcher() {
+export function ColorSchemeSwitcher({
+  variant = "menu",
+}: {
+  variant?: "menu" | "drawer";
+}) {
   const { colorScheme, setColorScheme } = useMantineColorScheme();
   const current =
     OPTIONS.find((option) => option.value === colorScheme) ?? OPTIONS[0];
 
+  if (variant === "drawer") {
+    return (
+      <Stack gap="xs" w="100%">
+        <Text size="xs" fw={600} c="dimmed" tt="uppercase" lts="0.04em">
+          Theme
+        </Text>
+        {OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            className="brand-nav-link brand-nav-link--drawer"
+            data-active={colorScheme === option.value}
+            onClick={() => setColorScheme(option.value)}
+          >
+            <Group gap="sm" wrap="nowrap">
+              <Icon icon={option.icon} size={18} />
+              <span>{option.label}</span>
+            </Group>
+          </button>
+        ))}
+      </Stack>
+    );
+  }
+
   return (
     <Menu position="bottom-end" withinPortal>
       <Menu.Target>
-        <ActionIcon variant="default" size="md" aria-label="Theme">
+        <ActionIcon variant="subtle" color="gray" size="md" aria-label="Theme">
           <Icon icon={current.icon} />
         </ActionIcon>
       </Menu.Target>

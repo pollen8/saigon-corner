@@ -1,0 +1,30 @@
+.root {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+}
+
+.logo {
+  width: auto;
+  max-width: min(100%, 320px);
+  object-fit: contain;
+  display: block;
+}
+
+.caption {
+  font-style: italic;
+  color: var(--app-brand-subtitle);
+  letter-spacing: 0.02em;
+}
+
+.caption::before,
+.caption::after {
+  content: "▪▪▪";
+  font-style: normal;
+  font-size: 0.65em;
+  letter-spacing: 0.15em;
+  opacity: 0.55;
+  margin: 0 0.5em;
+  vertical-align: middle;
+}

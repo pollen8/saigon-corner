@@ -38,6 +38,20 @@ export function dayOfWeekFromIso(iso: string): number {
   return jsDay === 0 ? 6 : jsDay - 1;
 }
 
+/** Inclusive list of ISO dates from `startIso` through `endIso`. */
+export function eachIsoDateInRange(startIso: string, endIso: string): string[] {
+  const start = parseIsoDate(startIso);
+  const end = parseIsoDate(endIso);
+  if (end < start) {
+    return [];
+  }
+  const dates: string[] = [];
+  for (let cursor = new Date(start); cursor <= end; cursor.setDate(cursor.getDate() + 1)) {
+    dates.push(formatIsoDate(cursor));
+  }
+  return dates;
+}
+
 export function timeToMinutes(value: string): number {
   const [h, m] = value.slice(0, 5).split(":").map(Number);
   return h * 60 + m;
@@ -45,4 +59,14 @@ export function timeToMinutes(value: string): number {
 
 export function minutesToDuration(start: string, end: string): number {
   return timeToMinutes(end) - timeToMinutes(start);
+}
+
+/** True if ranges overlap in time. Adjacent blocks (one ends when the other starts) do not overlap. */
+export function timeRangesOverlap(
+  startA: string,
+  endA: string,
+  startB: string,
+  endB: string,
+): boolean {
+  return timeToMinutes(startA) < timeToMinutes(endB) && timeToMinutes(startB) < timeToMinutes(endA);
 }

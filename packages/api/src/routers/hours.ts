@@ -1,6 +1,9 @@
 import { asc, eq, operatingHoursPeriods } from "@app/db";
+import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { adminProcedure, router } from "../trpc.js";
+
+const dayOfWeekSchema = z.number().int().min(0).max(6);
 
 const timeSchema = z
   .string()
@@ -69,5 +72,60 @@ export const hoursRouter = router({
         .delete(operatingHoursPeriods)
         .where(eq(operatingHoursPeriods.id, input.id));
       return { ok: true as const };
+    }),
+
+  copyDayToDays: adminProcedure
+    .input(
+      z.object({
+        fromDayOfWeek: dayOfWeekSchema,
+        targetDays: z.array(dayOfWeekSchema).min(1),
+      }),
+    )
+    .mutation(async ({ ctx, input }) => {
+      const targetDays = [
+        ...new Set(
+          input.targetDays.filter((day) => day !== input.fromDayOfWeek),
+        ),
+      ];
+      if (targetDays.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "Choose at least one other day.",
+        });
+      }
+
+      const source = await ctx.db
+        .select({
+          openTime: operatingHoursPeriods.openTime,
+          closeTime: operatingHoursPeriods.closeTime,
+          sortOrder: operatingHoursPeriods.sortOrder,
+        })
+        .from(operatingHoursPeriods)
+        .where(eq(operatingHoursPeriods.dayOfWeek, input.fromDayOfWeek))
+        .orderBy(asc(operatingHoursPeriods.sortOrder));
+
+      if (source.length === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "This day has no opening hours to copy.",
+        });
+      }
+
+      for (const targetDay of targetDays) {
+        await ctx.db
+          .delete(operatingHoursPeriods)
+          .where(eq(operatingHoursPeriods.dayOfWeek, targetDay));
+
+        for (const period of source) {
+          await ctx.db.insert(operatingHoursPeriods).values({
+            dayOfWeek: targetDay,
+            openTime: period.openTime,
+            closeTime: period.closeTime,
+            sortOrder: period.sortOrder,
+          });
+        }
+      }
+
+      return { copiedTo: targetDays.length, windows: source.length };
     }),
 });

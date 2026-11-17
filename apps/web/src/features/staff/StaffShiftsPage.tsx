@@ -1,9 +1,7 @@
 import { trpc } from "../../trpc";
 import {
-  ActionIcon,
   Anchor,
   Badge,
-  Button,
   Group,
   Paper,
   Stack,
@@ -11,14 +9,18 @@ import {
   Text,
   Title,
 } from "@mantine/core";
-import { IconChevronLeft, IconChevronRight } from "@tabler/icons-react";
 import { Link, useParams, useSearchParams } from "react-router-dom";
+import { AreaBadge } from "../../shared/ui/AreaBadge";
+import { WeekNavigator } from "../../shared/ui/WeekNavigator";
+import {
+  overlappingActualLog,
+  shiftActualStatus,
+} from "../../shared/lib/shiftActualStatus";
 import {
   currentWeekStartIso,
   DAY_LABELS,
   formatShortDate,
   formatTimeRange,
-  shiftWeek,
   totalHoursFromRanges,
 } from "../../shared/lib/week";
 
@@ -31,11 +33,17 @@ export function StaffShiftsPage() {
     staffMemberId: staffId,
     weekStart,
   });
+  const logsQuery = trpc.timeLog.listForWeek.useQuery({
+    weekStart,
+    staffMemberId: staffId,
+  });
 
   const data = detailQuery.data;
   const staff = data?.staff;
   const shifts = data?.shifts ?? [];
+  const actualLogs = (logsQuery.data?.logs ?? []).map((row) => row.log);
   const scheduledHours = totalHoursFromRanges(shifts);
+  const loggedHours = totalHoursFromRanges(actualLogs);
 
   function setWeek(iso: string) {
     setSearchParams({ week: iso });
@@ -60,33 +68,16 @@ export function StaffShiftsPage() {
             {staff?.name ?? "…"}
           </Title>
           {staff ? (
-            <Badge variant="light">
-              {staff.department === "foh" ? "Front of house" : "Kitchen"}
-            </Badge>
+            <Text size="sm" c="dimmed">
+              Usual area: {staff.department === "foh" ? "front of house" : "kitchen"}
+            </Text>
           ) : null}
           <Text size="sm" c="dimmed">
-            Scheduled: <strong>{scheduledHours}h</strong> this week
+            Scheduled: <strong>{scheduledHours}h</strong> · logged:{" "}
+            <strong>{loggedHours}h</strong> this week
           </Text>
         </Stack>
-        <Group gap="xs">
-          <ActionIcon
-            variant="default"
-            onClick={() => setWeek(shiftWeek(weekStart, -1))}
-            aria-label="Previous week"
-          >
-            <IconChevronLeft size={18} />
-          </ActionIcon>
-          <Button variant="light" size="compact-sm" onClick={() => setWeek(currentWeekStartIso())}>
-            This week
-          </Button>
-          <ActionIcon
-            variant="default"
-            onClick={() => setWeek(shiftWeek(weekStart, 1))}
-            aria-label="Next week"
-          >
-            <IconChevronRight size={18} />
-          </ActionIcon>
-        </Group>
+        <WeekNavigator weekStart={weekStart} onChange={setWeek} />
       </Group>
 
       <Table withTableBorder>
@@ -113,13 +104,73 @@ export function StaffShiftsPage() {
                     </Text>
                   ) : (
                     <Stack gap={4}>
-                      {dayShifts.map((shift) => (
-                        <Paper key={shift.id} withBorder p="xs" radius="sm">
-                          <Text size="sm">
-                            {formatTimeRange(shift.startTime, shift.endTime)}
-                          </Text>
-                        </Paper>
-                      ))}
+                      {dayShifts.map((shift) => {
+                        const status = shiftActualStatus(shift, actualLogs);
+                        const overlap =
+                          status === "fail"
+                            ? overlappingActualLog(shift, actualLogs)
+                            : undefined;
+                        const notLogged = status === "fail" && !overlap;
+                        const mismatch = status === "fail" && overlap;
+                        const borderColor =
+                          status === "success"
+                            ? "var(--mantine-color-green-5)"
+                            : notLogged
+                              ? "var(--mantine-color-orange-5)"
+                              : mismatch
+                                ? "var(--mantine-color-red-5)"
+                                : undefined;
+                        const background =
+                          status === "success"
+                            ? "var(--mantine-color-green-light)"
+                            : notLogged
+                              ? "var(--mantine-color-orange-light)"
+                              : mismatch
+                                ? "var(--mantine-color-red-light)"
+                                : undefined;
+                        return (
+                          <Paper
+                            key={shift.id}
+                            withBorder
+                            p="xs"
+                            radius="sm"
+                            style={{
+                              borderColor,
+                              background,
+                            }}
+                          >
+                            <Group gap="xs" justify="space-between" wrap="wrap">
+                              <Group gap="xs">
+                                <Text size="sm">
+                                  {formatTimeRange(shift.startTime, shift.endTime)}
+                                </Text>
+                                <AreaBadge department={shift.department} />
+                              </Group>
+                              {status === "success" ? (
+                                <Badge size="sm" color="green" variant="light">
+                                  Logged
+                                </Badge>
+                              ) : null}
+                              {notLogged ? (
+                                <Badge size="sm" color="orange" variant="light">
+                                  Not logged
+                                </Badge>
+                              ) : null}
+                              {mismatch ? (
+                                <Badge size="sm" color="red" variant="light">
+                                  Mismatch
+                                </Badge>
+                              ) : null}
+                            </Group>
+                            {status === "fail" && overlap ? (
+                              <Text size="xs" c="dimmed" mt={4}>
+                                Recorded:{" "}
+                                {formatTimeRange(overlap.startTime, overlap.endTime)}
+                              </Text>
+                            ) : null}
+                          </Paper>
+                        );
+                      })}
                     </Stack>
                   )}
                 </Table.Td>

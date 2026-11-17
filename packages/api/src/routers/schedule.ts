@@ -6,60 +6,32 @@ import {
   lte,
   operatingHoursPeriods,
   scheduledShifts,
+  staffHolidays,
   staffMembers,
-  type Database,
 } from "@app/db";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import {
+  clearOverlappingCoverageGaps,
+  listCoverageGapsForWeek,
+} from "../lib/coverage-gaps.js";
+import {
   dayOfWeekFromIso,
   formatIsoDate,
-  minutesToDuration,
   parseIsoDate,
   startOfWeekMonday,
   weekDatesFromMonday,
 } from "../lib/dates.js";
-import {
-  openingHoursMessage,
-  shiftWithinOpeningHours,
-} from "../lib/opening-hours.js";
 import { adminProcedure, router } from "../trpc.js";
-
-async function periodsForDate(db: Database, workDate: string) {
-  const dayOfWeek = dayOfWeekFromIso(workDate);
-  return db
-    .select({
-      openTime: operatingHoursPeriods.openTime,
-      closeTime: operatingHoursPeriods.closeTime,
-    })
-    .from(operatingHoursPeriods)
-    .where(eq(operatingHoursPeriods.dayOfWeek, dayOfWeek))
-    .orderBy(asc(operatingHoursPeriods.sortOrder));
-}
-
-async function assertShiftAllowed(
-  db: Database,
-  workDate: string,
-  startTime: string,
-  endTime: string,
-) {
-  const periods = await periodsForDate(db, workDate);
-  if (minutesToDuration(startTime, endTime) <= 0) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: "End time must be after start time.",
-    });
-  }
-  if (!shiftWithinOpeningHours(periods, startTime, endTime)) {
-    throw new TRPCError({
-      code: "BAD_REQUEST",
-      message: openingHoursMessage(periods),
-    });
-  }
-}
+import {
+  assertNoOverlappingShift,
+  assertShiftAllowed,
+  assertStaffNotOnHoliday,
+} from "./schedule-assertions.js";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const timeSchema = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/);
+const departmentSchema = z.enum(["foh", "kitchen"]);
 
 export const scheduleRouter = router({
   week: adminProcedure
@@ -74,7 +46,7 @@ export const scheduleRouter = router({
       const rangeStart = dates[0];
       const rangeEnd = dates[6];
 
-      const [staff, shifts, hours] = await Promise.all([
+      const [staff, shifts, hours, holidays, coverageGaps] = await Promise.all([
         ctx.db
           .select()
           .from(staffMembers)
@@ -97,6 +69,19 @@ export const scheduleRouter = router({
             asc(operatingHoursPeriods.dayOfWeek),
             asc(operatingHoursPeriods.sortOrder),
           ),
+        ctx.db
+          .select({
+            staffMemberId: staffHolidays.staffMemberId,
+            workDate: staffHolidays.workDate,
+          })
+          .from(staffHolidays)
+          .where(
+            and(
+              gte(staffHolidays.workDate, rangeStart),
+              lte(staffHolidays.workDate, rangeEnd),
+            ),
+          ),
+        listCoverageGapsForWeek(ctx.db, rangeStart, rangeEnd),
       ]);
 
       const hoursByDay = new Map<number, typeof hours>();
@@ -114,6 +99,11 @@ export const scheduleRouter = router({
         operatingHoursByDay: Object.fromEntries(
           dates.map((iso) => [iso, hoursByDay.get(dayOfWeekFromIso(iso)) ?? []]),
         ),
+        holidays: holidays.map((row) => ({
+          staffMemberId: row.staffMemberId,
+          workDate: String(row.workDate),
+        })),
+        coverageGaps,
       };
     }),
 
@@ -124,15 +114,39 @@ export const scheduleRouter = router({
         workDate: isoDateSchema,
         startTime: timeSchema,
         endTime: timeSchema,
+        department: departmentSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      await assertStaffNotOnHoliday(
+        ctx.db,
+        input.staffMemberId,
+        input.workDate,
+      );
       await assertShiftAllowed(
         ctx.db,
         input.workDate,
         input.startTime,
         input.endTime,
       );
+      await assertNoOverlappingShift(
+        ctx.db,
+        input.staffMemberId,
+        input.workDate,
+        input.startTime,
+        input.endTime,
+      );
+
+      const [staff] = await ctx.db
+        .select({ department: staffMembers.department })
+        .from(staffMembers)
+        .where(eq(staffMembers.id, input.staffMemberId));
+
+      if (!staff) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Staff not found." });
+      }
+
+      const department = input.department ?? staff.department;
 
       const [row] = await ctx.db
         .insert(scheduledShifts)
@@ -141,8 +155,18 @@ export const scheduleRouter = router({
           workDate: input.workDate,
           startTime: input.startTime,
           endTime: input.endTime,
+          department,
         })
         .returning();
+
+      await clearOverlappingCoverageGaps(
+        ctx.db,
+        input.workDate,
+        input.startTime,
+        input.endTime,
+        department,
+      );
+
       return row;
     }),
 
@@ -150,8 +174,10 @@ export const scheduleRouter = router({
     .input(
       z.object({
         id: z.string().uuid(),
+        workDate: isoDateSchema.optional(),
         startTime: timeSchema.optional(),
         endTime: timeSchema.optional(),
+        department: departmentSchema.optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
@@ -164,19 +190,28 @@ export const scheduleRouter = router({
         throw new TRPCError({ code: "NOT_FOUND", message: "Shift not found." });
       }
 
+      const workDate = input.workDate ?? String(existing.workDate);
       const startTime = input.startTime ?? existing.startTime;
       const endTime = input.endTime ?? existing.endTime;
-      await assertShiftAllowed(
+      await assertStaffNotOnHoliday(
         ctx.db,
-        String(existing.workDate),
+        existing.staffMemberId,
+        workDate,
+      );
+      await assertShiftAllowed(ctx.db, workDate, startTime, endTime);
+      await assertNoOverlappingShift(
+        ctx.db,
+        existing.staffMemberId,
+        workDate,
         startTime,
         endTime,
+        existing.id,
       );
 
       const { id, ...patch } = input;
       const [row] = await ctx.db
         .update(scheduledShifts)
-        .set(patch)
+        .set({ ...patch, workDate })
         .where(eq(scheduledShifts.id, id))
         .returning();
       return row;

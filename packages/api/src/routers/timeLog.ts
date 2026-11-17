@@ -18,6 +18,10 @@ import {
 } from "../lib/dates.js";
 import { TRPCError } from "@trpc/server";
 import { adminProcedure, router } from "../trpc.js";
+import {
+  assertNoOverlappingTimeLog,
+  assertStaffNotOnHoliday,
+} from "./schedule-assertions.js";
 
 const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 const timeSchema = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/);
@@ -84,6 +88,18 @@ export const timeLogRouter = router({
           message: "End time must be after start time",
         });
       }
+      await assertStaffNotOnHoliday(
+        ctx.db,
+        input.staffMemberId,
+        input.workDate,
+      );
+      await assertNoOverlappingTimeLog(
+        ctx.db,
+        input.staffMemberId,
+        input.workDate,
+        input.startTime,
+        input.endTime,
+      );
       const [row] = await ctx.db
         .insert(actualTimeLogs)
         .values({
@@ -107,6 +123,34 @@ export const timeLogRouter = router({
       }),
     )
     .mutation(async ({ ctx, input }) => {
+      const [existing] = await ctx.db
+        .select()
+        .from(actualTimeLogs)
+        .where(eq(actualTimeLogs.id, input.id));
+
+      if (!existing) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Time log not found." });
+      }
+
+      const startTime = input.startTime ?? existing.startTime;
+      const endTime = input.endTime ?? existing.endTime;
+      const duration = minutesToDuration(startTime, endTime);
+      if (duration <= 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "End time must be after start time",
+        });
+      }
+
+      await assertNoOverlappingTimeLog(
+        ctx.db,
+        existing.staffMemberId,
+        String(existing.workDate),
+        startTime,
+        endTime,
+        existing.id,
+      );
+
       const { id, ...patch } = input;
       const [row] = await ctx.db
         .update(actualTimeLogs)

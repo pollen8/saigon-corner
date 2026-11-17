@@ -1,0 +1,152 @@
+body {
+  min-height: 100vh;
+}
+
+.app-frame {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.brand-header {
+  background: var(--app-card-bg);
+  border-bottom: 2px solid var(--app-brand-teal);
+  padding: 0.65rem 1.25rem;
+}
+
+.brand-header-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1.25rem;
+  flex-wrap: nowrap;
+}
+
+.brand-header-brand {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.brand-header-actions {
+  flex-shrink: 0;
+}
+
+.brand-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.15rem;
+}
+
+@media (max-width: 47.99em) {
+  .brand-nav[data-visible-from="sm"] {
+    display: none;
+  }
+
+  .brand-header {
+    padding: 0.55rem 1rem;
+  }
+
+  .app-main {
+    padding: 1rem 1rem 2rem;
+  }
+}
+
+.brand-nav--drawer {
+  flex-direction: column;
+  gap: 0.35rem;
+  width: 100%;
+}
+
+.brand-nav-link--drawer {
+  width: 100%;
+  text-align: left;
+  padding: 0.75rem 1rem;
+  font-size: 1rem;
+  min-height: 2.75rem;
+}
+
+.brand-nav-link {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--mantine-color-dimmed);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  padding: 0.4rem 0.7rem;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.brand-nav-link:hover {
+  background: var(--app-table-header-bg);
+  color: var(--app-nav-hover-fg);
+}
+
+.brand-nav-link[data-active="true"] {
+  background: var(--app-table-header-bg);
+  color: var(--app-nav-active-fg);
+}
+
+.app-main {
+  flex: 1;
+  max-width: 1280px;
+  width: 100%;
+  margin: 0 auto;
+  padding: 1.25rem 1.25rem 2.5rem;
+}
+
+.sign-in-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1rem;
+}
+
+.sign-in-panel {
+  max-width: 400px;
+  width: 100%;
+  background: var(--app-brand-gold) !important;
+  border-color: var(--app-sign-in-panel-border) !important;
+}
+
+.mantine-Table-thead {
+  background: var(--app-table-header-bg);
+}
+
+.mantine-SegmentedControl-label {
+  color: var(--app-segmented-label);
+}
+
+.mantine-SegmentedControl-label[data-active],
+.mantine-SegmentedControl-label[data-active]:hover {
+  color: var(--app-segmented-label-active);
+}
+
+.toolbar-segmented {
+  height: var(--button-height-sm);
+  padding: 3px;
+  box-sizing: border-box;
+}
+
+.toolbar-segmented .mantine-SegmentedControl-label {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  padding-block: 0;
+}
+
+.roster-day-picker .mantine-SegmentedControl-label {
+  padding-inline: 0.35rem;
+  font-size: 0.7rem;
+  justify-content: center;
+  text-align: center;
+}
+
+.roster-day-picker .mantine-SegmentedControl-control {
+  flex: 1 1 0;
+  min-width: 0;
+}

@@ -1,77 +1,111 @@
 import { authClient } from "@app/auth/client";
-import {
-  Button,
-  Container,
-  Group,
-  Stack,
-  Tabs,
-  Text,
-  Title,
-} from "@mantine/core";
+import { Box, Burger, Button, Drawer, Group, Stack, Text } from "@mantine/core";
+import { useDisclosure } from "@mantine/hooks";
+import { useEffect } from "react";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
+import { APP_NAV, AppNavLinks, type AppNavRoute } from "./AppNavLinks";
+import { BrandMark } from "./BrandMark";
 import { ColorSchemeSwitcher } from "./ColorSchemeSwitcher";
-
-const NAV = [
-  { to: "/schedule", label: "Weekly roster" },
-  { to: "/staff", label: "Staff" },
-  { to: "/hours", label: "Opening hours" },
-  { to: "/time-logs", label: "Actual hours" },
-] as const;
 
 export function AppLayout() {
   const { data: session } = authClient.useSession();
   const location = useLocation();
   const navigate = useNavigate();
+  const [menuOpened, { toggle: toggleMenu, close: closeMenu }] =
+    useDisclosure(false);
 
   const active =
-    NAV.find((item) => location.pathname.startsWith(item.to))?.to ?? "/schedule";
+    APP_NAV.find((item) => location.pathname.startsWith(item.to))?.to ??
+    "/schedule";
+
+  useEffect(() => {
+    closeMenu();
+  }, [location.pathname, closeMenu]);
+
+  function goTo(to: AppNavRoute) {
+    navigate(to);
+    closeMenu();
+  }
+
+  function signOut() {
+    closeMenu();
+    authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => navigate("/sign-in"),
+      },
+    });
+  }
 
   return (
-    <Container size="xl" py="lg" px="md">
-      <Stack gap="md">
-        <Group justify="space-between" align="flex-end" wrap="wrap">
-          <Stack gap={4}>
-            <Title order={1} size="h3">
-              Saigon Corner
-            </Title>
-            <Text size="sm" c="dimmed">
-              Staff scheduling & time
-              {session?.user?.email ? ` · ${session.user.email}` : null}
-            </Text>
-          </Stack>
-          <Group gap="sm">
-            <ColorSchemeSwitcher />
+    <div className="app-frame">
+      <header className="brand-header">
+        <div className="brand-header-inner">
+          <Group gap="sm" wrap="nowrap" className="brand-header-brand">
+            <BrandMark logoHeight={36} />
+          </Group>
+          <nav className="brand-nav" aria-label="Main" data-visible-from="sm">
+            <AppNavLinks
+              active={active}
+              variant="bar"
+              onSelect={(to) => navigate(to)}
+            />
+          </nav>
+          <Group gap="sm" wrap="nowrap" className="brand-header-actions">
+            {session?.user?.email ? (
+              <Text size="xs" c="dimmed" visibleFrom="md">
+                {session.user.email}
+              </Text>
+            ) : null}
+            <Box visibleFrom="sm">
+              <ColorSchemeSwitcher />
+            </Box>
             <Button
-              variant="light"
+              variant="default"
               size="compact-sm"
-              onClick={() =>
-                authClient.signOut({
-                  fetchOptions: {
-                    onSuccess: () => navigate("/sign-in"),
-                  },
-                })
-              }
+              onClick={signOut}
+              visibleFrom="sm"
             >
               Sign out
             </Button>
+            <Burger
+              opened={menuOpened}
+              onClick={toggleMenu}
+              hiddenFrom="sm"
+              size="sm"
+              aria-label={menuOpened ? "Close menu" : "Open menu"}
+            />
           </Group>
-        </Group>
+        </div>
+      </header>
 
-        <Tabs
-          value={active}
-          onChange={(value) => value && navigate(value)}
-        >
-          <Tabs.List>
-            {NAV.map((item) => (
-              <Tabs.Tab key={item.to} value={item.to}>
-                {item.label}
-              </Tabs.Tab>
-            ))}
-          </Tabs.List>
-        </Tabs>
+      <Drawer
+        opened={menuOpened}
+        onClose={closeMenu}
+        title="Menu"
+        position="right"
+        size="min(100%, 20rem)"
+        hiddenFrom="sm"
+        padding="md"
+      >
+        <Stack gap="lg">
+          {session?.user?.email ? (
+            <Text size="sm" c="dimmed">
+              {session.user.email}
+            </Text>
+          ) : null}
+          <nav className="brand-nav brand-nav--drawer" aria-label="Main mobile">
+            <AppNavLinks active={active} variant="drawer" onSelect={goTo} />
+          </nav>
+          <ColorSchemeSwitcher variant="drawer" />
+          <Button variant="default" fullWidth onClick={signOut}>
+            Sign out
+          </Button>
+        </Stack>
+      </Drawer>
 
+      <main className="app-main">
         <Outlet />
-      </Stack>
-    </Container>
+      </main>
+    </div>
   );
 }

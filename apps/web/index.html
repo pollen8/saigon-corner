@@ -4,13 +4,14 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Saigon Corner — Staff</title>
+    <link rel="icon" type="image/png" href="/logo.png" />
     <script>
       try {
         var stored = window.localStorage.getItem("mantine-color-scheme-value");
         var scheme =
           stored === "light" || stored === "dark" || stored === "auto"
             ? stored
-            : "auto";
+            : "light";
         var computed =
           scheme !== "auto"
             ? scheme

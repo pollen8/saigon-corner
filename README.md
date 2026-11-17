@@ -62,12 +62,12 @@ Same pattern as the [Haven](https://github.com/pollen8/haven) repo: a **Droplet*
 | `docker-compose.yml` | Local dev Postgres only |
 | `docker-compose.prod.yml` | Droplet: Postgres + app (no Caddy) |
 | `Dockerfile` | Build web + run API with migrations on start |
-| `deploy/env.example` | Template for `/opt/saigon-staff/.env` |
+| `deploy/env.example` | Template for `/opt/saigon-staff/saigon-corner/.env` |
 | `deploy/Caddyfile.snippet` | Site block for Haven’s Caddy on the same droplet |
 
 On the shared Haven droplet, Caddy stays in `/opt/haven`; wire this app with `deploy/Caddyfile.snippet`.
 
-Typical app directory: `/opt/saigon-staff` (or your choice).
+Production app directory on the droplet: `/opt/saigon-staff/saigon-corner` (repo root with `Dockerfile`, `.env`, and `docker-compose.prod.yml`).
 
 ### Droplet env (`.env` on the server)
 
@@ -97,8 +97,8 @@ DNS: **A record** for your hostname → droplet IPv4 (certificate issuance needs
 After creating the droplet (Ubuntu, SSH, firewall 22/80/443), install Docker and clone the repo. Haven’s `deploy/bootstrap.sh` automates clone, UFW, and `docker compose up -d --build`. Equivalent manual flow:
 
 ```bash
-# On the droplet as root (after .env is in /opt/saigon-staff/.env)
-cd /opt/saigon-staff
+# On the droplet as root (after .env is in place)
+cd /opt/saigon-staff/saigon-corner
 git fetch origin main
 git checkout main
 git reset --hard origin/main
@@ -115,7 +115,7 @@ The app joins `haven_default` via compose (`networks.haven`). Add `deploy/Caddyf
 
 ```bash
 ssh -i ~/.ssh/your-deploy-key root@YOUR_DROPLET_IP
-cd /opt/saigon-staff
+cd /opt/saigon-staff/saigon-corner
 git fetch origin main
 git reset --hard origin/main
 docker compose -f docker-compose.prod.yml up -d --build
@@ -128,7 +128,7 @@ docker compose -f docker-compose.prod.yml up -d --build
 Migrations run on app container start (`drizzle-kit migrate` in the entrypoint, Haven-style). To run manually:
 
 ```bash
-cd /opt/saigon-staff
+cd /opt/saigon-staff/saigon-corner
 docker compose -f docker-compose.prod.yml exec app pnpm --filter @app/db exec drizzle-kit migrate
 ```
 

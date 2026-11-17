@@ -4,6 +4,7 @@ import {
   ActionIcon,
   Button,
   Group,
+  Modal,
   ScrollArea,
   Select,
   SimpleGrid,
@@ -25,7 +26,7 @@ import {
   totalHoursFromRanges,
   weekStartForIsoDate,
 } from "../../shared/lib/week";
-import { TIME_OPTIONS } from "../../shared/lib/timeOptions";
+import { TIME_LOG_OPTIONS } from "../../shared/lib/timeOptions";
 import { WeekNavigator } from "../../shared/ui/WeekNavigator";
 import { downloadCsv } from "../../shared/lib/csv";
 import { readTimeLogPrefill } from "../../shared/lib/timeLogPrefill";
@@ -63,6 +64,9 @@ export function TimeLogPage() {
   const [startTime, setStartTime] = useState("09:00:00");
   const [endTime, setEndTime] = useState("17:00:00");
   const [notes, setNotes] = useState("");
+  const [exportOpen, setExportOpen] = useState(false);
+  const [exportStart, setExportStart] = useState(weekStart);
+  const [exportEnd, setExportEnd] = useState(todayIso);
 
   const activeStaff = (staffQuery.data ?? []).filter((s) => s.active);
   const logs = logsQuery.data?.logs ?? [];
@@ -93,35 +97,57 @@ export function TimeLogPage() {
   }, [searchParams]);
 
   const dateOptions = useMemo(() => pastDateSelectOptions(), []);
+  const exportDateOptions = useMemo(() => pastDateSelectOptions(730), []);
+  const exportRangeInvalid = exportEnd < exportStart;
 
-  function exportLogsCsv() {
-    if (logs.length === 0) return;
-    const rows: string[][] = [
-      [
-        "Staff",
-        "Area",
-        "Date",
-        "Start",
-        "End",
-        "Hours",
-        "Notes",
-      ],
-    ];
-    for (const { log, staffName, department } of logs) {
-      const hours = totalHoursFromRanges([
-        { startTime: log.startTime, endTime: log.endTime },
-      ]);
-      rows.push([
-        staffName,
-        department === "foh" ? "Front of house" : "Kitchen",
-        String(log.workDate),
-        log.startTime.slice(0, 5),
-        log.endTime.slice(0, 5),
-        String(hours),
-        log.notes?.trim() ?? "",
-      ]);
+  function openExportModal() {
+    const dates = logsQuery.data?.dates ?? [];
+    setExportStart(dates[0] ?? weekStart);
+    setExportEnd(dates[6] ?? todayIso());
+    setExportOpen(true);
+  }
+
+  async function exportLogsCsv() {
+    if (exportRangeInvalid) return;
+    try {
+      const result = await utils.timeLog.listForRange.fetch({
+        startDate: exportStart,
+        endDate: exportEnd,
+      });
+      if (result.logs.length === 0) {
+        notifications.show({
+          color: "yellow",
+          title: "Nothing to export",
+          message: "No time logs in that date range.",
+        });
+        return;
+      }
+      const rows: string[][] = [
+        ["Staff", "Area", "Date", "Start", "End", "Hours", "Notes"],
+      ];
+      for (const { log, staffName, department } of result.logs) {
+        const hours = totalHoursFromRanges([
+          { startTime: log.startTime, endTime: log.endTime },
+        ]);
+        rows.push([
+          staffName,
+          department === "foh" ? "Front of house" : "Kitchen",
+          String(log.workDate),
+          log.startTime.slice(0, 5),
+          log.endTime.slice(0, 5),
+          String(hours),
+          log.notes?.trim() ?? "",
+        ]);
+      }
+      downloadCsv(`time-logs-${exportStart}-to-${exportEnd}.csv`, rows);
+      setExportOpen(false);
+    } catch (error) {
+      notifications.show({
+        color: "red",
+        title: "Could not export CSV",
+        message: error instanceof Error ? error.message : "Try again.",
+      });
     }
-    downloadCsv(`time-logs-week-${weekStart}.csv`, rows);
   }
 
   return (
@@ -141,14 +167,57 @@ export function TimeLogPage() {
             variant="default"
             size="sm"
             leftSection={<IconDownload size={16} />}
-            disabled={logs.length === 0}
-            onClick={exportLogsCsv}
+            onClick={openExportModal}
           >
             Export CSV
           </Button>
           <WeekNavigator weekStart={weekStart} onChange={setWeek} />
         </Group>
       </Group>
+
+      <Modal
+        opened={exportOpen}
+        onClose={() => setExportOpen(false)}
+        title="Export time logs"
+        centered
+      >
+        <Stack gap="md">
+          <Text size="sm" c="dimmed">
+            Inclusive dates. Defaults to the week on screen.
+          </Text>
+          <Select
+            label="Start date"
+            data={exportDateOptions}
+            value={exportStart}
+            onChange={(value) => setExportStart(value ?? exportStart)}
+            searchable
+          />
+          <Select
+            label="End date"
+            data={exportDateOptions}
+            value={exportEnd}
+            onChange={(value) => setExportEnd(value ?? exportEnd)}
+            searchable
+            error={
+              exportRangeInvalid ? "End date must be on or after start date" : undefined
+            }
+          />
+          <Group justify="flex-end">
+            <Button variant="default" onClick={() => setExportOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              leftSection={<IconDownload size={16} />}
+              disabled={exportRangeInvalid}
+              onClick={() => {
+                void exportLogsCsv();
+              }}
+            >
+              Download CSV
+            </Button>
+          </Group>
+        </Stack>
+      </Modal>
 
       <SimpleGrid cols={{ base: 1, md: 2 }} spacing="lg" verticalSpacing="lg">
         <Stack gap="sm" maw={480}>
@@ -170,14 +239,14 @@ export function TimeLogPage() {
           <Group grow>
             <Select
               label="Started"
-              data={TIME_OPTIONS}
+              data={TIME_LOG_OPTIONS}
               value={startTime}
               onChange={(v) => setStartTime(v ?? startTime)}
               searchable
             />
             <Select
               label="Finished"
-              data={TIME_OPTIONS}
+              data={TIME_LOG_OPTIONS}
               value={endTime}
               onChange={(v) => setEndTime(v ?? endTime)}
               searchable

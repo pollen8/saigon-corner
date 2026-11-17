@@ -70,6 +70,49 @@ export const timeLogRouter = router({
       };
     }),
 
+  listForRange: adminProcedure
+    .input(
+      z.object({
+        startDate: isoDateSchema,
+        endDate: isoDateSchema,
+      }),
+    )
+    .query(async ({ ctx, input }) => {
+      const start = parseIsoDate(input.startDate);
+      const end = parseIsoDate(input.endDate);
+      if (end < start) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: "End date must be on or after start date",
+        });
+      }
+
+      const logs = await ctx.db
+        .select({
+          log: actualTimeLogs,
+          staffName: staffMembers.name,
+          department: staffMembers.department,
+        })
+        .from(actualTimeLogs)
+        .innerJoin(
+          staffMembers,
+          eq(actualTimeLogs.staffMemberId, staffMembers.id),
+        )
+        .where(
+          and(
+            gte(actualTimeLogs.workDate, input.startDate),
+            lte(actualTimeLogs.workDate, input.endDate),
+          ),
+        )
+        .orderBy(
+          asc(actualTimeLogs.workDate),
+          asc(staffMembers.name),
+          asc(actualTimeLogs.startTime),
+        );
+
+      return { startDate: input.startDate, endDate: input.endDate, logs };
+    }),
+
   create: adminProcedure
     .input(
       z.object({

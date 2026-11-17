@@ -6,11 +6,8 @@ node_modules
 .pnpm-store
 .cursor
 .env
-.env.container
 .env.*
-secrets/postgres_password
 !deploy/env.example
-!deploy/env.container.example
 **/.DS_Store
 **/dist
 apps/web/dist

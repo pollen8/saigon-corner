@@ -9,7 +9,7 @@
   },
   "scripts": {
     "generate": "DOTENV_CONFIG_PATH=../../.env drizzle-kit generate",
-    "migrate": "drizzle-kit migrate",
+    "migrate": "DOTENV_CONFIG_PATH=../../.env drizzle-kit migrate",
     "studio": "DOTENV_CONFIG_PATH=../../.env drizzle-kit studio"
   },
   "dependencies": {

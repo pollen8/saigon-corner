@@ -2,9 +2,7 @@ node_modules
 dist
 .output
 .env
-.env.container
 deploy/env.filled
-secrets/postgres_password
 .turbo
 uploads
 *.log

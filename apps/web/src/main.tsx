@@ -10,6 +10,9 @@ import { Notifications } from "@mantine/notifications";
 import { App } from "./app/App";
 import { cssVariablesResolver, theme } from "./app/theme";
 import { trpc, createTRPCClient } from "./trpc";
+import { registerPwa } from "./pwa";
+
+registerPwa();
 
 function Root() {
   const [queryClient] = useState(() => new QueryClient());

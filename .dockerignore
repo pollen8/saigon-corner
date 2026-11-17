@@ -1,0 +1,13 @@
+node_modules
+**/node_modules
+.git
+.github
+.turbo
+.pnpm-store
+.cursor
+.env
+.env.*
+!deploy/env.example
+**/.DS_Store
+**/dist
+apps/web/dist

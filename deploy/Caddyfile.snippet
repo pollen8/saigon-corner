@@ -1,0 +1,10 @@
+# Add to /opt/haven/Caddyfile (Haven already binds :80 and :443).
+#
+#   docker network connect haven_default saigon-staff-app
+#
+# Then reload Caddy:
+#   cd /opt/haven && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile
+
+saigon-corner.pollen-8.co.uk {
+	reverse_proxy saigon-staff-app:3100
+}

@@ -28,6 +28,7 @@ const handleAuthRequest = createAuthRouteHandler(auth);
 const server = fastify({
   routerOptions: { maxParamLength: 5000 },
   logger: true,
+  trustProxy: true,
 });
 
 await server.register(cors, {

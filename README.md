@@ -103,10 +103,9 @@ git fetch origin main
 git checkout main
 git reset --hard origin/main
 docker compose -f docker-compose.prod.yml up -d --build
-docker network connect haven_default saigon-staff-app   # once, or after recreate
 ```
 
-Add `deploy/Caddyfile.snippet` to `/opt/haven/Caddyfile`, then reload Caddy. Check `https://saigon-corner.pollen-8.co.uk/health`.
+The app joins `haven_default` via compose (`networks.haven`). Add `deploy/Caddyfile.snippet` to `/opt/haven/Caddyfile`, then reload Caddy. Check `https://saigon-corner.pollen-8.co.uk/health`.
 
 ### Deploy updates
 

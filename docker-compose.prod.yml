@@ -1,5 +1,5 @@
-# Production on the droplet (no Caddy — terminate TLS in Haven’s Caddy).
-# After `up`, connect `app` to haven_default and add deploy/Caddyfile.snippet.
+# Production on the droplet (no Caddy — TLS on Haven’s Caddy).
+# `app` joins Haven’s Docker network so Caddy can reach saigon-staff-app:3100.
 
 services:
   postgres:
@@ -16,6 +16,8 @@ services:
       interval: 5s
       timeout: 5s
       retries: 10
+    networks:
+      - default
 
   app:
     container_name: saigon-staff-app
@@ -34,6 +36,14 @@ services:
     restart: unless-stopped
     expose:
       - "3100"
+    networks:
+      - default
+      - haven
+
+networks:
+  haven:
+    external: true
+    name: haven_default
 
 volumes:
   postgres_data:

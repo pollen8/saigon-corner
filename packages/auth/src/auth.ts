@@ -38,10 +38,13 @@ export function createAuth(db: Database) {
     throw new Error("GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET are required");
   }
 
+  const baseURL = process.env.BETTER_AUTH_URL ?? "http://localhost:3100";
+  const webURL = process.env.WEB_URL ?? "http://localhost:5280";
+
   return betterAuth({
     secret: getAuthSecret(),
-    baseURL: process.env.BETTER_AUTH_URL ?? "http://localhost:3100",
-    trustedOrigins: [process.env.WEB_URL ?? "http://localhost:5280"],
+    baseURL,
+    trustedOrigins: Array.from(new Set([webURL, baseURL])),
     database: drizzleAdapter(db, {
       provider: "pg",
       schema,
@@ -56,6 +59,7 @@ export function createAuth(db: Database) {
       google: {
         clientId,
         clientSecret,
+        redirectURI: `${baseURL}/api/auth/callback/google`,
       },
     },
     databaseHooks: {

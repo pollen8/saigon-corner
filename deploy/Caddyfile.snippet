@@ -1,6 +1,5 @@
 # Add to /opt/haven/Caddyfile (Haven already binds :80 and :443).
-#
-#   docker network connect haven_default saigon-staff-app
+# App is on haven_default via docker-compose.prod.yml — no manual network connect.
 #
 # Then reload Caddy:
 #   cd /opt/haven && docker compose exec caddy caddy reload --config /etc/caddy/Caddyfile

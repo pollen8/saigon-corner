@@ -2,6 +2,30 @@ import { fromNodeHeaders } from "better-auth/node";
 import { eq, users, type Database } from "@app/db";
 import { getAdminEmails, type Auth } from "./auth.js";
 
+function headerValue(
+  headers: Record<string, string | string[] | undefined>,
+  name: string,
+): string | undefined {
+  const value = headers[name];
+  if (Array.isArray(value)) {
+    return value[0];
+  }
+  return value;
+}
+
+function requestOrigin(
+  headers: Record<string, string | string[] | undefined>,
+): string {
+  const host =
+    headerValue(headers, "x-forwarded-host") ??
+    headerValue(headers, "host") ??
+    "localhost";
+  const proto =
+    headerValue(headers, "x-forwarded-proto") ??
+    (process.env.NODE_ENV === "production" ? "https" : "http");
+  return `${proto}://${host}`;
+}
+
 export function createAuthRouteHandler(auth: Auth) {
   return async (request: {
     url: string;
@@ -9,10 +33,7 @@ export function createAuthRouteHandler(auth: Auth) {
     headers: Record<string, string | string[] | undefined>;
     body?: unknown;
   }) => {
-    const url = new URL(
-      request.url,
-      `http://${request.headers.host ?? "localhost"}`,
-    );
+    const url = new URL(request.url, requestOrigin(request.headers));
     const headers = fromNodeHeaders(request.headers);
     const body =
       request.method !== "GET" && request.method !== "HEAD" && request.body

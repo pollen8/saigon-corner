@@ -15,7 +15,12 @@ export function SignInPage() {
       callbackURL: `${window.location.origin}/schedule`,
     });
     if (signInError) {
-      setError(signInError.message ?? "Sign-in failed");
+      setError(
+        signInError.message ??
+          (signInError.status
+            ? `Sign-in failed (${signInError.status})`
+            : "Sign-in failed"),
+      );
       setLoading(false);
     }
   }

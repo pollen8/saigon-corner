@@ -1,12 +1,16 @@
 #!/bin/sh
 set -eu
 
+if [ -f "${POSTGRES_PASSWORD_FILE:-}" ]; then
+  POSTGRES_PASSWORD="$(tr -d '\r\n' < "$POSTGRES_PASSWORD_FILE")"
+  export POSTGRES_PASSWORD
+fi
+
 if [ -z "${POSTGRES_PASSWORD:-}" ]; then
-  echo "POSTGRES_PASSWORD is missing from .env.container" >&2
+  echo "POSTGRES_PASSWORD is empty. Put one line in secrets/postgres_password" >&2
   exit 1
 fi
 
-# Ignore any leftover DATABASE_URL from env files.
 unset DATABASE_URL
 
 export DATABASE_URL="$(node --input-type=module -e "
@@ -18,8 +22,6 @@ export DATABASE_URL="$(node --input-type=module -e "
   process.stdout.write('postgresql://' + user + ':' + enc + '@' + host + ':5432/' + db);
 ")"
 
-# drizzle-kit migrate must not inherit a broken DATABASE_URL from a dotenv file.
-# Run from packages/db so drizzle.config.ts is found; pass URL on the process only.
 cd /app/packages/db
 DATABASE_URL="$DATABASE_URL" pnpm exec drizzle-kit migrate --config /app/packages/db/drizzle.config.ts
 cd /app

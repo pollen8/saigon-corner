@@ -1,19 +1,19 @@
 # Production on the droplet (no Caddy — TLS on Haven’s Caddy).
 #
-# Compose interpolates ${VARS} from `.env` in this directory. Do not put
-# POSTGRES_PASSWORD in `.env` if it contains $ or % — those are mangled.
-# Use POSTGRES_PASSWORD in `.env.container` instead (loaded as-is into containers).
+# Postgres password is NOT interpolated from Compose `.env`.
+# Put the same string in `secrets/postgres_password` (one line, no quotes).
+# Copy that file to both postgres and app via POSTGRES_PASSWORD_FILE.
 
 services:
   postgres:
     image: postgres:16
-    env_file:
-      - .env.container
     environment:
       POSTGRES_USER: postgres
       POSTGRES_DB: saigon_staff
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./secrets/postgres_password:/run/secrets/postgres_password:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U postgres -d saigon_staff"]
@@ -37,6 +37,9 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_HOST: postgres
       POSTGRES_DB: saigon_staff
+      POSTGRES_PASSWORD_FILE: /run/secrets/postgres_password
+    volumes:
+      - ./secrets/postgres_password:/run/secrets/postgres_password:ro
     depends_on:
       postgres:
         condition: service_healthy

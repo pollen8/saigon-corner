@@ -29,7 +29,10 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3100
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/saigon_staff
+      POSTGRES_USER: postgres
+      POSTGRES_HOST: postgres
+      POSTGRES_DB: saigon_staff
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     depends_on:
       postgres:
         condition: service_healthy

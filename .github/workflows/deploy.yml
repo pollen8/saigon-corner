@@ -9,12 +9,32 @@ jobs:
     runs-on: ubuntu-latest
     environment: production
     steps:
+      - name: Check deploy secrets
+        env:
+          DROPLET_HOST: ${{ secrets.DROPLET_HOST }}
+          DROPLET_USER: ${{ secrets.DROPLET_USER }}
+          DROPLET_SSH_KEY: ${{ secrets.DROPLET_SSH_KEY }}
+        run: |
+          set -euo pipefail
+          echo "host length: ${#DROPLET_HOST}"
+          echo "user: ${DROPLET_USER:-<empty>}"
+          echo "key length: ${#DROPLET_SSH_KEY}"
+          echo "$DROPLET_SSH_KEY" | head -n 1
+          echo "$DROPLET_SSH_KEY" | tail -n 1
+          if [ -z "$DROPLET_HOST" ] || [ -z "$DROPLET_USER" ] || [ -z "$DROPLET_SSH_KEY" ]; then
+            echo "A deploy secret is empty. Set DROPLET_HOST, DROPLET_USER, DROPLET_SSH_KEY on the production environment."
+            exit 1
+          fi
+
       - name: Deploy to droplet
         uses: appleboy/ssh-action@v1.2.2
         with:
           host: ${{ secrets.DROPLET_HOST }}
           username: ${{ secrets.DROPLET_USER }}
           key: ${{ secrets.DROPLET_SSH_KEY }}
+          protocol: tcp
+          timeout: 30s
+          command_timeout: 20m
           script: |
             set -euo pipefail
             cd /opt/saigon-staff/saigon-corner

@@ -6,8 +6,10 @@ node_modules
 .pnpm-store
 .cursor
 .env
+.env.container
 .env.*
 !deploy/env.example
+!deploy/env.container.example
 **/.DS_Store
 **/dist
 apps/web/dist

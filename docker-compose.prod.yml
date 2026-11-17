@@ -2,7 +2,7 @@
 # Use a simple password (letters/numbers only) — no $ % ! £.
 
 services:
-  postgres:
+  saigon-postgres:
     image: postgres:16
     environment:
       POSTGRES_USER: postgres
@@ -29,9 +29,9 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3100
-      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@postgres:5432/saigon_staff
+      DATABASE_URL: postgresql://postgres:${POSTGRES_PASSWORD}@saigon-postgres:5432/saigon_staff
     depends_on:
-      postgres:
+      saigon-postgres:
         condition: service_healthy
     restart: unless-stopped
     expose:

@@ -31,7 +31,7 @@ export function SignInPage() {
         <Stack gap="md" align="center">
           <BrandMark logoHeight={48} />
           <Text ta="center" size="sm" c="dimmed">
-            Staff roster and hours. Sign in with Google.
+            Staff rota and hours. Sign in with Google.
           </Text>
           <Button
             loading={loading}

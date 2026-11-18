@@ -49,7 +49,7 @@ export function RosterTemplatesModal({
       notifications.show({
         color: "teal",
         title: "Template saved",
-        message: "This week’s roster pattern was saved.",
+        message: "This week’s rota pattern was saved.",
       });
       onClose();
     },
@@ -75,7 +75,7 @@ export function RosterTemplatesModal({
       } else {
         const coverNote =
           needsCover > 0
-            ? ` ${needsCover} need cover on the roster (staff off).`
+            ? ` ${needsCover} need cover on the rota (staff off).`
             : "";
         notifications.show({
           color: "orange",
@@ -246,7 +246,7 @@ export function RosterTemplatesModal({
                         {row.needsCover ? (
                           <Text span size="sm" c="orange" inherit>
                             {" "}
-                            · Add another team member on the roster
+                            · Add another team member on the rota
                           </Text>
                         ) : null}
                       </Table.Td>

@@ -7,7 +7,7 @@ import { fileURLToPath } from "node:url";
 const PWA_BRAND = {
   name: "Saigon Corner — Staff",
   short_name: "SC Staff",
-  description: "Roster, opening hours, and time logs for Saigon Corner staff.",
+  description: "Rota, opening hours, and time logs for Saigon Corner staff.",
   theme_color: "#355264",
   background_color: "#f7f0dd",
 } as const;

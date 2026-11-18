@@ -122,23 +122,39 @@ export function TimeLogPage() {
         });
         return;
       }
-      const rows: string[][] = [
-        ["Staff", "Area", "Date", "Start", "End", "Hours", "Notes"],
-      ];
+      const byStaff = new Map<
+        string,
+        {
+          staffName: string;
+          department: string;
+          ranges: { startTime: string; endTime: string }[];
+        }
+      >();
       for (const { log, staffName, department } of result.logs) {
-        const hours = totalHoursFromRanges([
-          { startTime: log.startTime, endTime: log.endTime },
-        ]);
-        rows.push([
-          staffName,
-          department === "foh" ? "Front of house" : "Kitchen",
-          String(log.workDate),
-          log.startTime.slice(0, 5),
-          log.endTime.slice(0, 5),
-          String(hours),
-          log.notes?.trim() ?? "",
-        ]);
+        const existing = byStaff.get(log.staffMemberId);
+        if (existing) {
+          existing.ranges.push({
+            startTime: log.startTime,
+            endTime: log.endTime,
+          });
+        } else {
+          byStaff.set(log.staffMemberId, {
+            staffName,
+            department,
+            ranges: [{ startTime: log.startTime, endTime: log.endTime }],
+          });
+        }
       }
+      const rows: string[][] = [
+        ["Staff", "Area", "Hours"],
+        ...[...byStaff.values()]
+          .sort((a, b) => a.staffName.localeCompare(b.staffName))
+          .map((row) => [
+            row.staffName,
+            row.department === "foh" ? "Front of house" : "Kitchen",
+            String(totalHoursFromRanges(row.ranges)),
+          ]),
+      ];
       downloadCsv(`time-logs-${exportStart}-to-${exportEnd}.csv`, rows);
       setExportOpen(false);
     } catch (error) {

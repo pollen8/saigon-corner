@@ -23,6 +23,7 @@ import {
   IconDotsVertical,
   IconLayoutList,
   IconPlus,
+  IconPrinter,
   IconTemplate,
   IconTimeline,
   IconTrash,
@@ -275,7 +276,7 @@ export function WeeklySchedulePage() {
         >
           <Group gap="sm" align="center" wrap={isNarrow ? "nowrap" : "wrap"}>
             <Title order={2} size="h4">
-              Weekly roster
+              Weekly rota
             </Title>
             <Badge
               size="lg"
@@ -302,12 +303,18 @@ export function WeeklySchedulePage() {
                 <ActionIcon
                   variant="default"
                   size="input-sm"
-                  aria-label="Work template options"
+                  aria-label="Rota options"
                 >
                   <IconDotsVertical size={16} />
                 </ActionIcon>
               </Menu.Target>
               <Menu.Dropdown>
+                <Menu.Item
+                  leftSection={<IconPrinter size={16} />}
+                  onClick={() => window.print()}
+                >
+                  Print rota
+                </Menu.Item>
                 <Menu.Item onClick={() => setTemplateModal("save")}>
                   {TEMPLATE_MENU_LABELS.save}
                 </Menu.Item>
@@ -332,7 +339,7 @@ export function WeeklySchedulePage() {
                 label: (
                   <Group gap={6} wrap="nowrap" justify="center">
                     <IconLayoutList size={14} />
-                    <span>Roster</span>
+                    <span>Rota</span>
                   </Group>
                 ),
               },
@@ -348,6 +355,16 @@ export function WeeklySchedulePage() {
             ]}
           />
           <WeekNavigator weekStart={weekStart} onChange={setWeek} />
+          {!isNarrow ? (
+            <Button
+              variant="default"
+              size="sm"
+              leftSection={<IconPrinter size={16} />}
+              onClick={() => window.print()}
+            >
+              Print rota
+            </Button>
+          ) : null}
           {!isNarrow ? (
             <Menu position="bottom-end" withinPortal>
               <Menu.Target>
@@ -385,7 +402,7 @@ export function WeeklySchedulePage() {
       {coverageGapCount > 0 ? (
         <Alert color="orange" title="Coverage needed">
           {coverageGapCount} template shift block
-          {coverageGapCount === 1 ? " was" : "s were"} not rostered because staff were
+          {coverageGapCount === 1 ? " was" : "s were"} not put on the rota because staff were
           off. Assign another team member on the days marked below.
         </Alert>
       ) : null}
@@ -422,6 +439,7 @@ export function WeeklySchedulePage() {
       ) : null}
 
       {viewMode === "roster" && data && isNarrow ? (
+        <div className="no-print">
         <RosterDayView
           dates={data.dates}
           dayIndex={mobileDayIndex}
@@ -454,10 +472,13 @@ export function WeeklySchedulePage() {
             navigate(`/time-logs?${params.toString()}`);
           }}
         />
+        </div>
       ) : null}
 
       {viewMode === "roster" ? (
-      <ScrollArea visibleFrom="sm">
+      <ScrollArea
+        className={isNarrow ? "rota-week-print rota-week-print--screen-hidden" : "rota-week-print"}
+      >
         <Table withTableBorder striped style={{ minWidth: 900 }}>
           <Table.Thead>
             <Table.Tr>

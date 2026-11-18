@@ -1,5 +1,5 @@
 const NAV = [
-  { to: "/schedule", label: "Roster" },
+  { to: "/schedule", label: "Rota" },
   { to: "/staff", label: "Staff" },
   { to: "/hours", label: "Opening hours" },
   { to: "/time-logs", label: "Time logs" },

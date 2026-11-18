@@ -150,3 +150,50 @@ body {
   flex: 1 1 0;
   min-width: 0;
 }
+
+@media screen {
+  .rota-week-print--screen-hidden {
+    display: none !important;
+  }
+}
+
+@media print {
+  @page {
+    size: landscape;
+    margin: 10mm;
+  }
+
+  .brand-header,
+  .no-print,
+  .mantine-Notifications-root,
+  .mantine-Modal-root {
+    display: none !important;
+  }
+
+  .app-main {
+    max-width: none;
+    padding: 0;
+    margin: 0;
+  }
+
+  .rota-week-print,
+  .rota-week-print--screen-hidden {
+    display: block !important;
+    visibility: visible !important;
+    overflow: visible !important;
+    height: auto !important;
+    max-height: none !important;
+    width: 100% !important;
+  }
+
+  .rota-week-print table {
+    min-width: 0 !important;
+    width: 100% !important;
+    font-size: 11px;
+  }
+
+  .rota-week-print .mantine-ActionIcon-root,
+  .rota-week-print button {
+    display: none !important;
+  }
+}

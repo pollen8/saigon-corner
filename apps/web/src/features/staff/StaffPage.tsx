@@ -239,9 +239,9 @@ export function StaffPage() {
         Staff list
       </Title>
       <Text size="sm" c="dimmed">
-        Usual area is the default on the roster — you can override it per shift.
-        Inactive staff are hidden from the weekly roster. Mark days off below to
-        block rostering and time logs for that person.
+        Usual area is the default on the rota — you can override it per shift.
+        Inactive staff are hidden from the weekly rota. Mark days off below to
+        block the rota and time logs for that person.
       </Text>
 
       <Group align="flex-end" wrap="wrap">
@@ -432,7 +432,7 @@ export function StaffPage() {
               <Text span fw={600}>
                 {holidayConflictModal.staffName}
               </Text>{" "}
-              is still on the roster for{" "}
+              is still on the rota for{" "}
               {formatIsoDateRange(
                 holidayConflictModal.startDate,
                 holidayConflictModal.endDate ?? holidayConflictModal.startDate,
@@ -463,7 +463,7 @@ export function StaffPage() {
             </Table>
             <Text size="sm" c="dimmed">
               Add the days off and remove these shifts from the schedule, or cancel
-              to keep the roster unchanged.
+              to keep the rota unchanged.
             </Text>
             <Group justify="flex-end">
               <Button
@@ -507,7 +507,7 @@ export function StaffPage() {
             }}
           />
           <Switch
-            label="Active on roster"
+            label="Active on rota"
             description="Inactive staff are hidden from the weekly schedule"
             checked={editActive}
             onChange={(e) => setEditActive(e.currentTarget.checked)}
